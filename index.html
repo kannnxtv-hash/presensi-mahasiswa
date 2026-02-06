@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Presensi QR Code - Admin & Mahasiswa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Ganti library QR Code ke versi yang lebih baru -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <!-- Perbaiki library scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        /* CSS tetap sama seperti sebelumnya */
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--secondary);
+        }
+        
+        h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .role-selector {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            gap: 20px;
+        }
+        
+        .role-btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: white;
+            color: var(--primary);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .role-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .role-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .panel {
+            display: none;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        
+        .panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .admin-controls, .mahasiswa-controls {
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: var(--gray);
+            color: white;
+        }
+        
+        .qr-container {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        
+        #qrcode {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+        }
+        
+        .scan-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .attendance-data {
+            margin-top: 30px;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: #f1f5fd;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f9fafc;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-hadir {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-telat {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-alpa {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification-success {
+            background-color: var(--success);
+        }
+        
+        .notification-error {
+            background-color: var(--danger);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .instruction {
+            background-color: #f1f5fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 768px) {
+            .role-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .role-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            
+            .filter-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-qrcode"></i> Aplikasi Presensi QR Code</h1>
+            <p class="subtitle">Sistem presensi digital untuk admin dan mahasiswa</p>
+        </header>
+        
+        <div class="role-selector">
+            <button class="role-btn active" id="adminBtn">
+                <i class="fas fa-user-shield"></i> Mode Admin
+            </button>
+            <button class="role-btn" id="mahasiswaBtn">
+                <i class="fas fa-user-graduate"></i> Mode Mahasiswa
+            </button>
+        </div>
+        
+        <!-- Notifikasi -->
+        <div id="notification" class="notification"></div>
+        
+        <!-- Panel Admin -->
+        <div id="adminPanel" class="panel active">
+            <h2><i class="fas fa-user-shield"></i> Panel Admin</h2>
+            
+            <div class="instruction">
+                <p><strong>Instruksi Admin:</strong> Buat QR code untuk sesi presensi, lalu mahasiswa dapat memindai QR code tersebut. Anda juga dapat melihat data presensi per bulan.</p>
+            </div>
+            
+            <div class="admin-controls">
+                <button class="btn btn-primary" id="generateQRBtn">
+                    <i class="fas fa-qrcode"></i> Buat QR Code Presensi
+                </button>
+                <button class="btn btn-secondary" id="clearDataBtn">
+                    <i class="fas fa-trash-alt"></i> Hapus Data Presensi
+                </button>
+            </div>
+            
+            <div class="qr-container" id="qrContainer" style="display: none;">
+                <h3>QR Code Presensi Aktif</h3>
+                <div id="qrcode"></div>
+                <p><strong>ID Sesi:</strong> <span id="sessionId"></span></p>
+                <p><strong>Waktu Kedaluwarsa:</strong> <span id="expiryTime"></span></p>
+                <button class="btn btn-danger" id="stopQRBtn">
+                    <i class="fas fa-stop-circle"></i> Hentikan QR Code
+                </button>
+            </div>
+            
+            <div class="attendance-data">
+                <h3><i class="fas fa-chart-bar"></i> Data Presensi</h3>
+                
+                <div class="filter-controls">
+                    <div class="form-group">
+                        <label for="filterMonth">Filter Bulan</label>
+                        <select id="filterMonth">
+                            <option value="all">Semua Bulan</option>
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filterYear">Filter Tahun</label>
+                        <select id="filterYear">
+                            <!-- Options akan diisi oleh JavaScript -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filterStatus">Filter Status</label>
+                        <select id="filterStatus">
+                            <option value="all">Semua Status</option>
+                            <option value="hadir">Hadir</option>
+                            <option value="telat">Telat</option>
+                            <option value="alpa">Alpa</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="attendanceTable">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>NIM</th>
+                                <th>Nama</th>
+                                <th>Tanggal</th>
+                                <th>Waktu</th>
+                                <th>Status</th>
+                                <th>Sesi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="noDataMessage" style="text-align: center; padding: 30px; display: none;">
+                    <i class="fas fa-database" style="font-size: 3rem; color: #ddd; margin-bottom: 15px;"></i>
+                    <p>Tidak ada data presensi untuk filter yang dipilih.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel Mahasiswa -->
+        <div id="mahasiswaPanel" class="panel">
+            <h2><i class="fas fa-user-graduate"></i> Panel Mahasiswa</h2>
+            
+            <div class="instruction">
+                <p><strong>Instruksi Mahasiswa:</strong> Masukkan NIM dan nama Anda, lalu pindai QR code yang disediakan admin untuk melakukan presensi.</p>
+            </div>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="nim">NIM</label>
+                    <input type="text" id="nim" placeholder="Masukkan NIM Anda">
+                </div>
+                
+                <div class="form-group">
+                    <label for="nama">Nama Lengkap</label>
+                    <input type="text" id="nama" placeholder="Masukkan nama lengkap Anda">
+                </div>
+                
+                <button class="btn btn-primary" id="loginBtn" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> Masuk & Scan QR Code
+                </button>
+            </div>
+            
+            <div class="scan-container" id="scanContainer" style="display: none;">
+                <h3>Pindai QR Code Presensi</h3>
+                <div id="reader"></div>
+                <div id="scanResult" class="alert" style="margin-top: 20px;"></div>
+                
+                <div class="form-group" style="text-align: left; max-width: 500px; margin: 20px auto;">
+                    <label for="manualCode">Atau masukkan kode presensi secara manual:</label>
+                    <input type="text" id="manualCode" placeholder="Masukkan kode presensi dari admin">
+                    <button class="btn btn-primary" id="manualSubmitBtn" style="margin-top: 10px;">
+                        <i class="fas fa-paper-plane"></i> Submit Presensi
+                    </button>
+                </div>
+                
+                <button class="btn btn-secondary" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Keluar
+                </button>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Aplikasi Presensi QR Code &copy; 2023 | Dibuat untuk memudahkan presensi mahasiswa</p>
+            <p>Simpan data ini di localStorage browser. Untuk penggunaan produksi, gunakan backend database.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Data inisialisasi
+        let currentUser = null;
+        let activeQRCode = null;
+        let activeSession = null;
+        let scanner = null;
+        
+        // Elemen DOM
+        const adminBtn = document.getElementById('adminBtn');
+        const mahasiswaBtn = document.getElementById('mahasiswaBtn');
+        const adminPanel = document.getElementById('adminPanel');
+        const mahasiswaPanel = document.getElementById('mahasiswaPanel');
+        const generateQRBtn = document.getElementById('generateQRBtn');
+        const qrContainer = document.getElementById('qrContainer');
+        const qrcodeElement = document.getElementById('qrcode');
+        const sessionIdElement = document.getElementById('sessionId');
+        const expiryTimeElement = document.getElementById('expiryTime');
+        const stopQRBtn = document.getElementById('stopQRBtn');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        const filterMonth = document.getElementById('filterMonth');
+        const filterYear = document.getElementById('filterYear');
+        const filterStatus = document.getElementById('filterStatus');
+        const attendanceTableBody = document.getElementById('attendanceTableBody');
+        const noDataMessage = document.getElementById('noDataMessage');
+        const nimInput = document.getElementById('nim');
+        const namaInput = document.getElementById('nama');
+        const loginBtn = document.getElementById('loginBtn');
+        const scanContainer = document.getElementById('scanContainer');
+        const scanResult = document.getElementById('scanResult');
+        const manualCodeInput = document.getElementById('manualCode');
+        const manualSubmitBtn = document.getElementById('manualSubmitBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const notification = document.getElementById('notification');
+        
+        // Inisialisasi tahun untuk filter
+        const currentYear = new Date().getFullYear();
+        for (let year = currentYear - 2; year <= currentYear + 2; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            if (year === currentYear) option.selected = true;
+            filterYear.appendChild(option);
+        }
+        
+        // Load data dari localStorage
+        function loadAttendanceData() {
+            const data = localStorage.getItem('attendanceData');
+            return data ? JSON.parse(data) : [];
+        }
+        
+        // Simpan data ke localStorage
+        function saveAttendanceData(data) {
+            localStorage.setItem('attendanceData', JSON.stringify(data));
+        }
+        
+        // Tampilkan notifikasi
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.className = `notification notification-${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Generate ID unik
+        function generateId() {
+            return 'sesi_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Format tanggal
+        function formatDate(date) {
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+        
+        // Format waktu
+        function formatTime(date) {
+            const d = new Date(date);
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            const seconds = String(d.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+        
+        // Tampilkan data presensi
+        function renderAttendanceTable() {
+            const data = loadAttendanceData();
+            const month = filterMonth.value;
+            const year = filterYear.value;
+            const status = filterStatus.value;
+            
+            // Filter data
+            let filteredData = data;
+            
+            if (month !== 'all') {
+                filteredData = filteredData.filter(item => {
+                    const itemMonth = new Date(item.timestamp).getMonth() + 1;
+                    return itemMonth === parseInt(month);
+                });
+            }
+            
+            if (year !== 'all') {
+                filteredData = filteredData.filter(item => {
+                    const itemYear = new Date(item.timestamp).getFullYear();
+                    return itemYear === parseInt(year);
+                });
+            }
+            
+            if (status !== 'all') {
+                filteredData = filteredData.filter(item => item.status === status);
+            }
+            
+            // Render tabel
+            attendanceTableBody.innerHTML = '';
+            
+            if (filteredData.length === 0) {
+                noDataMessage.style.display = 'block';
+                attendanceTableBody.innerHTML = '';
+            } else {
+                noDataMessage.style.display = 'none';
+                
+                filteredData.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    
+                    // Tentukan kelas status
+                    let statusClass = '';
+                    if (item.status === 'hadir') statusClass = 'status-hadir';
+                    else if (item.status === 'telat') statusClass = 'status-telat';
+                    else if (item.status === 'alpa') statusClass = 'status-alpa';
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${item.nim}</td>
+                        <td>${item.nama}</td>
+                        <td>${formatDate(item.timestamp)}</td>
+                        <td>${formatTime(item.timestamp)}</td>
+                        <td><span class="status-badge ${statusClass}">${item.status.toUpperCase()}</span></td>
+                        <td>${item.sessionId}</td>
+                    `;
+                    
+                    attendanceTableBody.appendChild(row);
+                });
+            }
+        }
+        
+        // Generate QR code untuk presensi - VERSI DIPERBAIKI
+        function generateQRCode() {
+            try {
+                // Bersihkan QR code sebelumnya jika ada
+                qrcodeElement.innerHTML = '';
+                
+                // Buat session baru
+                activeSession = generateId();
+                const sessionData = {
+                    sessionId: activeSession,
+                    timestamp: new Date().getTime(),
+                    expiry: new Date().getTime() + (30 * 60 * 1000) // 30 menit dari sekarang
+                };
+                
+                // Konversi data menjadi string JSON
+                const sessionDataString = JSON.stringify(sessionData);
+                
+                console.log("Membuat QR Code dengan data:", sessionDataString);
+                
+                // Gunakan metode QRCode yang benar
+                activeQRCode = new QRCode(qrcodeElement, {
+                    text: sessionDataString,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                // Tampilkan info session
+                sessionIdElement.textContent = activeSession;
+                const expiryDate = new Date(sessionData.expiry);
+                expiryTimeElement.textContent = `${formatTime(expiryDate)} (${formatDate(expiryDate)})`;
+                
+                // Tampilkan container QR
+                qrContainer.style.display = 'block';
+                
+                // Simpan session aktif
+                localStorage.setItem('activeSession', JSON.stringify(sessionData));
+                
+                showNotification('QR Code berhasil dibuat! Berlaku selama 30 menit.', 'success');
+                console.log("QR Code berhasil dibuat");
+                
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                
+                // Fallback: buat QR code sederhana dengan canvas
+                try {
+                    qrcodeElement.innerHTML = '';
+                    activeSession = generateId();
+                    const sessionData = {
+                        sessionId: activeSession,
+                        timestamp: new Date().getTime(),
+                        expiry: new Date().getTime() + (30 * 60 * 1000)
+                    };
+                    
+                    const sessionDataString = JSON.stringify(sessionData);
+                    
+                    // Buat canvas untuk QR code manual
+                    const canvas = document.createElement('canvas');
+                    QRCode.toCanvas(canvas, sessionDataString, {
+                        width: 200,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    }, function(error) {
+                        if (error) {
+                            console.error("Error dengan toCanvas:", error);
+                            showNotification('Gagal membuat QR Code!', 'error');
+                            return;
+                        }
+                        
+                        qrcodeElement.appendChild(canvas);
+                        sessionIdElement.textContent = activeSession;
+                        const expiryDate = new Date(sessionData.expiry);
+                        expiryTimeElement.textContent = `${formatTime(expiryDate)} (${formatDate(expiryDate)})`;
+                        qrContainer.style.display = 'block';
+                        localStorage.setItem('activeSession', JSON.stringify(sessionData));
+                        showNotification('QR Code berhasil dibuat!', 'success');
+                    });
+                    
+                } catch (fallbackError) {
+                    console.error("Fallback juga gagal:", fallbackError);
+                    showNotification('Gagal membuat QR Code! Coba refresh halaman.', 'error');
+                }
+            }
+        }
+        
+        // Hentikan QR code aktif
+        function stopQRCode() {
+            qrcodeElement.innerHTML = '';
+            activeQRCode = null;
+            activeSession = null;
+            qrContainer.style.display = 'none';
+            localStorage.removeItem('activeSession');
+            showNotification('QR Code dihentikan.', 'success');
+        }
+        
+        // Proses presensi mahasiswa
+        function processAttendance(sessionData) {
+            if (!currentUser) {
+                showNotification('Silakan login terlebih dahulu.', 'error');
+                return false;
+            }
+            
+            const now = new Date().getTime();
+            
+            // Cek apakah session masih valid
+            if (now > sessionData.expiry) {
+                scanResult.textContent = 'QR Code sudah kedaluwarsa!';
+                scanResult.className = 'alert alert-danger';
+                scanResult.style.display = 'block';
+                showNotification('QR Code sudah kedaluwarsa!', 'error');
+                return false;
+            }
+            
+            // Cek apakah sudah presensi di session ini
+            const attendanceData = loadAttendanceData();
+            const alreadyAttended = attendanceData.some(item => 
+                item.nim === currentUser.nim && item.sessionId === sessionData.sessionId
+            );
+            
+            if (alreadyAttended) {
+                scanResult.textContent = 'Anda sudah melakukan presensi untuk sesi ini!';
+                scanResult.className = 'alert alert-danger';
+                scanResult.style.display = 'block';
+                showNotification('Anda sudah presensi untuk sesi ini!', 'error');
+                return false;
+            }
+            
+            // Tentukan status (hadir/telat)
+            let status = 'hadir';
+            const timeDiff = now - sessionData.timestamp;
+            const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+            
+            if (minutesDiff > 15) {
+                status = 'telat';
+            }
+            
+            // Tambahkan data presensi
+            const attendanceRecord = {
+                id: generateId(),
+                nim: currentUser.nim,
+                nama: currentUser.nama,
+                timestamp: now,
+                sessionId: sessionData.sessionId,
+                status: status
+            };
+            
+            attendanceData.push(attendanceRecord);
+            saveAttendanceData(attendanceData);
+            
+            // Tampilkan hasil
+            scanResult.innerHTML = `
+                <strong>Presensi Berhasil!</strong><br>
+                NIM: ${currentUser.nim}<br>
+                Nama: ${currentUser.nama}<br>
+                Waktu: ${formatTime(new Date())}<br>
+                Status: <span class="status-badge ${status === 'hadir' ? 'status-hadir' : 'status-telat'}">${status.toUpperCase()}</span>
+            `;
+            scanResult.className = 'alert alert-success';
+            scanResult.style.display = 'block';
+            
+            showNotification(`Presensi berhasil! Status: ${status.toUpperCase()}`, 'success');
+            
+            // Perbarui tabel admin jika sedang aktif
+            if (adminPanel.classList.contains('active')) {
+                renderAttendanceTable();
+            }
+            
+            return true;
+        }
+        
+        // Inisialisasi QR code scanner - VERSI DIPERBAIKI
+        function initQRScanner() {
+            // Bersihkan scanner sebelumnya jika ada
+            const readerElement = document.getElementById('reader');
+            readerElement.innerHTML = '';
+            
+            console.log("Menginisialisasi scanner...");
+            
+            try {
+                // Inisialisasi scanner baru
+                scanner = new Html5Qrcode("reader");
+                
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    formatsToSupport: [0] // QR_CODE format
+                };
+                
+                // Mulai scanning
+                scanner.start(
+                    { facingMode: "environment" }, // Gunakan kamera belakang jika ada
+                    config,
+                    (decodedText) => {
+                        // QR code berhasil dipindai
+                        console.log("QR Code dipindai:", decodedText);
+                        try {
+                            const sessionData = JSON.parse(decodedText);
+                            processAttendance(sessionData);
+                            
+                            // Hentikan scanner setelah berhasil
+                            scanner.stop().then(() => {
+                                console.log('Scanner dihentikan setelah berhasil scan');
+                            }).catch(err => {
+                                console.error('Error menghentikan scanner:', err);
+                            });
+                        } catch (error) {
+                            console.error("Error parsing QR code:", error);
+                            scanResult.textContent = 'QR Code tidak valid!';
+                            scanResult.className = 'alert alert-danger';
+                            scanResult.style.display = 'block';
+                            showNotification('QR Code tidak valid!', 'error');
+                        }
+                    },
+                    (errorMessage) => {
+                        // Error handling
+                        console.log("Scanner error:", errorMessage);
+                    }
+                ).catch(err => {
+                    console.error("Gagal memulai scanner:", err);
+                    scanResult.innerHTML = `
+                        <strong>Gagal mengakses kamera!</strong><br>
+                        Pastikan Anda memberikan izin akses kamera.<br>
+                        Atau gunakan input manual di bawah.
+                    `;
+                    scanResult.className = 'alert alert-danger';
+                    scanResult.style.display = 'block';
+                });
+                
+            } catch (error) {
+                console.error("Error inisialisasi scanner:", error);
+                scanResult.textContent = 'Gagal menginisialisasi scanner QR Code.';
+                scanResult.className = 'alert alert-danger';
+                scanResult.style.display = 'block';
+            }
+        }
+        
+        // Event Listeners
+        adminBtn.addEventListener('click', () => {
+            adminBtn.classList.add('active');
+            mahasiswaBtn.classList.remove('active');
+            adminPanel.classList.add('active');
+            mahasiswaPanel.classList.remove('active');
+            
+            // Render tabel saat beralih ke admin
+            renderAttendanceTable();
+            
+            // Hentikan scanner jika sedang berjalan
+            if (scanner) {
+                scanner.stop().then(() => {
+                    console.log('Scanner dihentikan saat pindah ke admin');
+                }).catch(err => {
+                    console.error('Error menghentikan scanner:', err);
+                });
+            }
+        });
+        
+        mahasiswaBtn.addEventListener('click', () => {
+            mahasiswaBtn.classList.add('active');
+            adminBtn.classList.remove('active');
+            mahasiswaPanel.classList.add('active');
+            adminPanel.classList.remove('active');
+            
+            // Reset form mahasiswa
+            scanContainer.style.display = 'none';
+            scanResult.style.display = 'none';
+            nimInput.value = '';
+            namaInput.value = '';
+            currentUser = null;
+            
+            // Hentikan scanner jika sedang berjalan
+            if (scanner) {
+                scanner.stop().then(() => {
+                    console.log('Scanner dihentikan saat logout');
+                }).catch(err => {
+                    console.error('Error menghentikan scanner:', err);
+                });
+            }
+        });
+        
+        generateQRBtn.addEventListener('click', generateQRCode);
+        
+        stopQRBtn.addEventListener('click', stopQRCode);
+        
+        clearDataBtn.addEventListener('click', () => {
+            if (confirm('Apakah Anda yakin ingin menghapus semua data presensi? Tindakan ini tidak dapat dibatalkan.')) {
+                localStorage.removeItem('attendanceData');
+                renderAttendanceTable();
+                showNotification('Semua data presensi telah dihapus.', 'success');
+            }
+        });
+        
+        filterMonth.addEventListener('change', renderAttendanceTable);
+        filterYear.addEventListener('change', renderAttendanceTable);
+        filterStatus.addEventListener('change', renderAttendanceTable);
+        
+        loginBtn.addEventListener('click', () => {
+            const nim = nimInput.value.trim();
+            const nama = namaInput.value.trim();
+            
+            if (!nim || !nama) {
+                showNotification('Harap isi NIM dan nama lengkap!', 'error');
+                return;
+            }
+            
+            currentUser = { nim, nama };
+            scanContainer.style.display = 'block';
+            
+            // Inisialisasi scanner dengan delay untuk memastikan elemen sudah ter-render
+            setTimeout(() => {
+                initQRScanner();
+            }, 300);
+            
+            showNotification(`Login berhasil! Selamat datang, ${nama}`, 'success');
+        });
+        
+        manualSubmitBtn.addEventListener('click', () => {
+            const manualCode = manualCodeInput.value.trim();
+            
+            if (!manualCode) {
+                showNotification('Harap masukkan kode presensi!', 'error');
+                return;
+            }
+            
+            try {
+                const sessionData = JSON.parse(manualCode);
+                processAttendance(sessionData);
+                manualCodeInput.value = '';
+            } catch (error) {
+                scanResult.textContent = 'Kode presensi tidak valid! Format harus berupa JSON.';
+                scanResult.className = 'alert alert-danger';
+                scanResult.style.display = 'block';
+                showNotification('Kode presensi tidak valid!', 'error');
+            }
+        });
+        
+        logoutBtn.addEventListener('click', () => {
+            currentUser = null;
+            scanContainer.style.display = 'none';
+            scanResult.style.display = 'none';
+            nimInput.value = '';
+            namaInput.value = '';
+            
+            if (scanner) {
+                scanner.stop().then(() => {
+                    console.log('Scanner dihentikan saat logout');
+                }).catch(err => {
+                    console.error('Error menghentikan scanner:', err);
+                });
+                scanner = null;
+            }
+            
+            showNotification('Anda telah logout.', 'success');
+        });
+        
+        // Load data saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Halaman dimuat...");
+            
+            // Cek apakah ada session aktif
+            const savedSession = localStorage.getItem('activeSession');
+            if (savedSession) {
+                try {
+                    const sessionData = JSON.parse(savedSession);
+                    const now = new Date().getTime();
+                    
+                    if (now < sessionData.expiry) {
+                        // Session masih valid, tampilkan QR code
+                        activeSession = sessionData.sessionId;
+                        
+                        // Recreate QR code
+                        try {
+                            qrcodeElement.innerHTML = '';
+                            new QRCode(qrcodeElement, {
+                                text: savedSession,
+                                width: 200,
+                                height: 200,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff",
+                                correctLevel: QRCode.CorrectLevel.H
+                            });
+                            
+                            sessionIdElement.textContent = activeSession;
+                            const expiryDate = new Date(sessionData.expiry);
+                            expiryTimeElement.textContent = `${formatTime(expiryDate)} (${formatDate(expiryDate)})`;
+                            qrContainer.style.display = 'block';
+                            console.log("QR Code aktif dimuat ulang");
+                        } catch (error) {
+                            console.error("Error memuat ulang QR code:", error);
+                        }
+                    } else {
+                        // Session sudah kedaluwarsa, hapus
+                        localStorage.removeItem('activeSession');
+                    }
+                } catch (error) {
+                    console.error('Error loading saved session:', error);
+                    localStorage.removeItem('activeSession');
+                }
+            }
+            
+            // Render data presensi awal
+            renderAttendanceTable();
+            
+            console.log("Aplikasi siap digunakan");
+        });
+    </script>
+</body>
+</html>
